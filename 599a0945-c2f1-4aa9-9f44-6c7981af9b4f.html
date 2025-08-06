@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <base target="_self">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SupplyNext Ltd. - Integrated Digital Supply Chain Platform</title>
+    <meta name="description" content="AI-powered supply chain optimization with real-time IoT monitoring">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        #map { height: 400px; }
+        .gauge-container { height: 200px; }
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+        }
+        .status-running { background-color: #10B981; }
+        .status-warning { background-color: #F59E0B; }
+        .status-stopped { background-color: #EF4444; }
+        .glow-card {
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+            transition: all 0.3s ease;
+        }
+        .glow-card:hover {
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+            transform: translateY(-2px);
+        }
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <header class="bg-white shadow-sm sticky top-0 z-10">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center">
+                <img src="https://picsum.photos/40?random=1" alt="SupplyNext Logo" class="h-10 w-10 rounded-full mr-3">
+                <h1 class="text-xl font-bold text-gray-800">SupplyNext Integrated Digital Supply Chain</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div class="relative group">
+                    <button class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm flex items-center">
+                        <i class="fas fa-user-shield mr-2"></i> Admin Portal
+                    </button>
+                    <div class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-20 hidden group-hover:block">
+                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">ERP System</a>
+                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">AI Model Settings</a>
+                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">IoT Dashboard</a>
+                    </div>
+                </div>
+                <span class="text-sm text-gray-600 hidden md:block">Last updated: <span id="last-updated" class="font-medium">Just now</span></span>
+                <button id="refresh-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm flex items-center">
+                    <i class="fas fa-sync-alt mr-1"></i> <span class="hidden md:inline">Refresh Data</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-6">
+        <!-- System Integration Status -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div class="bg-white p-4 rounded-lg shadow glow-card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-gray-500 text-sm font-medium">ERP System</h3>
+                        <p class="text-lg font-bold text-green-600">Connected</p>
+                    </div>
+                    <i class="fas fa-database text-2xl text-blue-500"></i>
+                </div>
+                <div class="mt-2 text-xs text-gray-500">Sync: <span class="text-green-600">Active</span></div>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow glow-card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-gray-500 text-sm font-medium">AI Prediction</h3>
+                        <p class="text-lg font-bold text-green-600">Online</p>
+                    </div>
+                    <i class="fas fa-brain text-2xl text-purple-500"></i>
+                </div>
+                <div class="mt-2 text-xs text-gray-500">Last run: <span class="text-green-600">2 min ago</span></div>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow glow-card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-gray-500 text-sm font-medium">IoT Network</h3>
+                        <p class="text-lg font-bold text-green-600">24/7 Active</p>
+                    </div>
+                    <i class="fas fa-satellite-dish text-2xl text-orange-500"></i>
+                </div>
+                <div class="mt-2 text-xs text-gray-500">Devices: <span class="text-green-600">18 connected</span></div>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow glow-card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-gray-500 text-sm font-medium">Tracking System</h3>
+                        <p class="text-lg font-bold text-green-600">Real-time</p>
+                    </div>
+                    <i class="fas fa-truck text-2xl text-teal-500"></i>
+                </div>
+                <div class="mt-2 text-xs text-gray-500">Vehicles: <span class="text-green-600">5 in transit</span></div>
+            </div>
+        </div>
+
+        <!-- Overview Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div class="bg-white p-4 rounded-lg shadow glow-card hover:border-blue-500 border-2 border-transparent transition-all">
+                <h3 class="text-gray-500 text-sm font-medium">Total Production Today</h3>
+                <p class="text-2xl font-bold">1,240 <span class="text-green-600 text-sm">+12%</span></p>
+                <div class="flex items-center mt-2">
+                    <div class="w-full bg-gray-200 rounded-full h-2.5 mr-2">
+                        <div class="bg-green-500 h-2.5 rounded-full" style="width: 85%"></div>
+                    </div>
+                    <span class="text-xs text-gray-500">85% of target</span>
+                </div>
+                <div class="mt-2 text-xs text-blue-600 flex items-center">
+                    <i class="fas fa-info-circle mr-1"></i> ERP scheduled: 1,500 units
+                </div>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow glow-card hover:border-yellow-500 border-2 border-transparent transition-all">
+                <h3 class="text-gray-500 text-sm font-medium">Inventory Level</h3>
+                <p class="text-2xl font-bold">78% <span class="text-yellow-600 text-sm">-5%</span></p>
+                <div class="flex items-center mt-2">
+                    <div class="w-full bg-gray-200 rounded-full h-2.5 mr-2">
+                        <div class="bg-yellow-500 h-2.5 rounded-full" style="width: 78%"></div>
+                    </div>
+                    <span class="text-xs text-gray-500">22% remaining</span>
+                </div>
+                <div class="mt-2 text-xs text-blue-600 flex items-center">
+                    <i class="fas fa-robot mr-1"></i> AI recommends reorder in 3 days
+                </div>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow glow-card hover:border-blue-500 border-2 border-transparent transition-all">
+                <h3 class="text-gray-500 text-sm font-medium">On-time Deliveries</h3>
+                <p class="text-2xl font-bold">92% <span class="text-green-600 text-sm">+3%</span></p>
+                <div class="flex items-center mt-2">
+                    <div class="w-full bg-gray-200 rounded-full h-2.5 mr-2">
+                        <div class="bg-blue-500 h-2.5 rounded-full" style="width: 92%"></div>
+                    </div>
+                    <span class="text-xs text-gray-500">8% delayed</span>
+                </div>
+                <div class="mt-2 text-xs text-blue-600 flex items-center">
+                    <i class="fas fa-map-marked-alt mr-1"></i> IoT tracking 5 vehicles
+                </div>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow glow-card hover:border-purple-500 border-2 border-transparent transition-all">
+                <h3 class="text-gray-500 text-sm font-medium">Predicted Demand</h3>
+                <p class="text-2xl font-bold">1,850 <span class="text-green-600 text-sm">+8%</span></p>
+                <div class="flex items-center mt-2">
+                    <div class="w-full bg-gray-200 rounded-full h-2.5 mr-2">
+                        <div class="bg-purple-500 h-2.5 rounded-full" style="width: 75%"></div>
+                    </div>
+                    <span class="text-xs text-gray-500">25% increase capacity</span>
+                </div>
+                <div class="mt-2 text-xs text-blue-600 flex items-center">
+                    <i class="fas fa-chart-line mr-1"></i> Next 30 days forecast
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Left Column -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- AI-Powered Demand Forecast -->
+                <div class="bg-white p-4 rounded-lg shadow glow-card">
+                    <div class="flex justify-between items-center mb-4">
+                        <div>
+                            <h2 class="text-lg font-semibold text-gray-800">AI-Powered Demand Forecast</h2>
+                            <p class="text-sm text-gray-500">Integrated with ERP for production planning</p>
+                        </div>
+                        <div class="flex space-x-2">
+                            <select id="forecast-range" class="border border-gray-300 rounded px-2 py-1 text-sm bg-white">
+                                <option value="30">Last 30 days</option>
+                                <option value="60">Last 60 days</option>
+                                <option value="90">Last 90 days</option>
+                            </select>
+                            <button id="run-forecast" class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded text-sm flex items-center">
+                                <i class="fas fa-bolt mr-1"></i> Run Forecast
+                            </button>
+                        </div>
+                    </div>
+                    <div id="forecastChart" class="h-80"></div>
+                    <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-blue-50 p-3 rounded-lg">
+                            <p class="text-xs text-blue-600 font-medium">Current Accuracy</p>
+                            <p class="text-xl font-bold">94.2%</p>
+                            <p class="text-xs text-gray-500">Based on last 30 predictions</p>
+                        </div>
+                        <div class="bg-purple-50 p-3 rounded-lg">
+                            <p class="text-xs text-purple-600 font-medium">Key Factor</p>
+                            <p class="text-sm font-medium">Seasonal Trend</p>
+                            <p class="text-xs text-gray-500">+15% summer demand</p>
+                        </div>
+                        <div class="bg-green-50 p-3 rounded-lg">
+                            <p class="text-xs text-green-600 font-medium">ERP Action</p>
+                            <p class="text-sm font-medium">Increase production</p>
+                            <p class="text-xs text-gray-500">+200 units next month</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Production Monitoring with IoT Integration -->
+                <div class="bg-white p-4 rounded-lg shadow glow-card">
+                    <div class="flex justify-between items-center mb-4">
+                        <div>
+                            <h2 class="text-lg font-semibold text-gray-800">Production Monitoring</h2>
+                            <p class="text-sm text-gray-500">Real-time IoT data from factory floor</p>
+                        </div>
+                        <button id="production-details" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm flex items-center">
+                            <i class="fas fa-industry mr-1"></i> View Details
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <div id="productionChart" class="h-64"></div>
+                            <div class="mt-2 text-center">
+                                <p class="text-sm text-gray-600">Target: 1,500 units | Actual: <span class="font-bold">1,240</span></p>
+                                <div class="w-full bg-gray-200 rounded-full h-2 mt-1">
+                                    <div class="bg-green-500 h-2 rounded-full" style="width: 82.66%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="text-md font-medium text-gray-700 mb-2">IoT Machine Status</h3>
+                            <div class="space-y-3">
+                                <div class="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                                    <div class="flex items-center">
+                                        <span class="status-indicator status-running pulse"></span>
+                                        <span>Fan Assembler #1</span>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="text-sm text-gray-600">Running</span>
+                                        <div class="text-xs text-gray-500">Output: 320 units</div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                                    <div class="flex items-center">
+                                        <span class="status-indicator status-running"></span>
+                                        <span>Fan Assembler #2</span>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="text-sm text-gray-600">Running</span>
+                                        <div class="text-xs text-gray-500">Output: 280 units</div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                                    <div class="flex items-center">
+                                        <span class="status-indicator status-warning pulse"></span>
+                                        <span>Packaging Line</span>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="text-sm text-yellow-600">Maintenance</span>
+                                        <div class="text-xs text-gray-500">ETA: 25 minutes</div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                                    <div class="flex items-center">
+                                        <span class="status-indicator status-stopped"></span>
+                                        <span>Quality Control</span>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="text-sm text-red-600">Stopped</span>
+                                        <div class="text-xs text-gray-500">Since 10:45 AM</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-4 bg-blue-50 p-2 rounded-lg">
+                                <p class="text-xs text-blue-600 flex items-center">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    <span>IoT sensors reporting temperature, vibration, and output metrics</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column -->
+            <div class="space-y-6">
+                <!-- Inventory Optimization -->
+                <div class="bg-white p-4 rounded-lg shadow glow-card">
+                    <div class="flex justify-between items-center mb-4">
+                        <div>
+                            <h2 class="text-lg font-semibold text-gray-800">Inventory Optimization</h2>
+                            <p class="text-sm text-gray-500">AI-driven stock management</p>
+                        </div>
+                        <button id="inventory-actions" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm flex items-center">
+                            <i class="fas fa-robot mr-1"></i> AI Actions
+                        </button>
+                    </div>
+                    <div id="inventoryChart" class="h-64"></div>
+                    <div class="mt-4 grid grid-cols-2 gap-2">
+                        <div class="bg-red-50 p-3 rounded-lg border border-red-100">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="text-xs text-red-600 font-medium">Low Stock</p>
+                                    <p class="text-lg font-bold">Motors</p>
+                                    <p class="text-sm text-gray-600">120 units remaining</p>
+                                </div>
+                                <button class="bg-red-100 hover:bg-red-200 text-red-600 p-1 rounded-full">
+                                    <i class="fas fa-shopping-cart text-xs"></i>
+                                </button>
+                            </div>
+                            <div class="mt-2 text-xs text-blue-600 flex items-center">
+                                <i class="fas fa-robot mr-1"></i>
+                                <span>AI suggests order 500 units</span>
+                            </div>
+                        </div>
+                        <div class="bg-yellow-50 p-3 rounded-lg border border-yellow-100">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="text-xs text-yellow-600 font-medium">Warning</p>
+                                    <p class="text-lg font-bold">Blades</p>
+                                    <p class="text-sm text-gray-600">450 units remaining</p>
+                                </div>
+                                <button class="bg-yellow-100 hover:bg-yellow-200 text-yellow-600 p-1 rounded-full">
+                                    <i class="fas fa-bell text-xs"></i>
+                                </button>
+                            </div>
+                            <div class="mt-2 text-xs text-blue-600 flex items-center">
+                                <i class="fas fa-robot mr-1"></i>
+                                <span>Monitor next 3 days</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3 bg-purple-50 p-2 rounded-lg">
+                        <p class="text-xs text-purple-600 flex items-center">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            <span>ERP integration updates stock levels automatically</span>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Real-time Delivery Tracking -->
+                <div class="bg-white p-4 rounded-lg shadow glow-card">
+                    <div class="flex justify-between items-center mb-4">
+                        <div>
+                            <h2 class="text-lg font-semibold text-gray-800">Real-time Delivery Tracking</h2>
+                            <p class="text-sm text-gray-500">IoT GPS and logistics integration</p>
+                        </div>
+                        <button id="delivery-actions" class="bg-teal-600 hover:bg-teal-700 text-white px-3 py-1 rounded text-sm flex items-center">
+                            <i class="fas fa-truck mr-1"></i> Logistics
+                        </button>
+                    </div>
+                    <div id="map"></div>
+                    <div class="mt-4 space-y-3">
+                        <div class="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                            <div>
+                                <p class="font-medium flex items-center">
+                                    <i class="fas fa-truck-moving text-blue-500 mr-2"></i>
+                                    Truck #DL-3421
+                                </p>
+                                <p class="text-sm text-gray-600">ETA: Today, 14:00</p>
+                            </div>
+                            <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">On Time</span>
+                        </div>
+                        <div class="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                            <div>
+                                <p class="font-medium flex items-center">
+                                    <i class="fas fa-truck-moving text-orange-500 mr-2"></i>
+                                    Truck #DL-5678
+                                </p>
+                                <p class="text-sm text-gray-600">ETA: Tomorrow, 09:00</p>
+                            </div>
+                            <span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">Delayed</span>
+                        </div>
+                    </div>
+                    <div class="mt-3 bg-blue-50 p-2 rounded-lg">
+                        <p class="text-xs text-blue-600 flex items-center">
+                            <i class="fas fa-satellite-dish mr-1"></i>
+                            <span>IoT GPS tracking with 5-minute updates</span>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Intelligent Alerts -->
+                <div class="bg-white p-4 rounded-lg shadow glow-card">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-lg font-semibold text-gray-800">Intelligent Alerts</h2>
+                        <span class="bg-red-500 text-white text-xs px-2 py-1 rounded-full">3 New</span>
+                    </div>
+                    <div class="space-y-3">
+                        <div class="flex items-start p-3 bg-red-50 rounded-lg border border-red-100">
+                            <div class="bg-red-100 p-2 rounded-full mr-3">
+                                <i class="fas fa-exclamation-circle text-red-500"></i>
+                            </div>
+                            <div>
+                                <p class="font-medium">Critical: Low inventory - Motors</p>
+                                <p class="text-sm text-gray-600">Stock level below threshold (120 units)</p>
+                                <div class="mt-2 flex items-center text-xs text-blue-600">
+                                    <i class="fas fa-robot mr-1"></i>
+                                    <span>AI recommends immediate reorder of 500 units</span>
+                                </div>
+                                <div class="mt-1 text-xs text-gray-500">10:32 AM · ERP Notification</div>
+                            </div>
+                        </div>
+                        <div class="flex items-start p-3 bg-yellow-50 rounded-lg border border-yellow-100">
+                            <div class="bg-yellow-100 p-2 rounded-full mr-3">
+                                <i class="fas fa-exclamation-triangle text-yellow-500"></i>
+                            </div>
+                            <div>
+                                <p class="font-medium">Warning: Packaging line maintenance</p>
+                                <p class="text-sm text-gray-600">Scheduled maintenance in 25 minutes</p>
+                                <div class="mt-2 flex items-center text-xs text-blue-600">
+                                    <i class="fas fa-industry mr-1"></i>
+                                    <span>IoT sensors detected vibration anomaly</span>
+                                </div>
+                                <div class="mt-1 text-xs text-gray-500">10:15 AM · IoT Alert</div>
+                            </div>
+                        </div>
+                        <div class="flex items-start p-3 bg-blue-50 rounded-lg border border-blue-100">
+                            <div class="bg-blue-100 p-2 rounded-full mr-3">
+                                <i class="fas fa-info-circle text-blue-500"></i>
+                            </div>
+                            <div>
+                                <p class="font-medium">New demand forecast available</p>
+                                <p class="text-sm text-gray-600">Updated prediction for next quarter</p>
+                                <div class="mt-2 flex items-center text-xs text-blue-600">
+                                    <i class="fas fa-brain mr-1"></i>
+                                    <span>AI model completed monthly forecast run</span>
+                                </div>
+                                <div class="mt-1 text-xs text-gray-500">9:45 AM · AI Notification</div>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="w-full mt-3 bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 rounded text-sm flex items-center justify-center">
+                        <i class="fas fa-bell mr-1"></i> View All Alerts
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-white border-t mt-8 py-4">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="text-center md:text-left mb-4 md:mb-0">
+                    <p class="text-sm text-gray-500">© 2025 SupplyNext Ltd. - Integrated Digital Supply Chain Platform</p>
+                    <p class="text-xs text-gray-400 mt-1">ERP + AI + IoT + Tracking System Integration</p>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="text-sm text-gray-500 flex items-center">
+                        <i class="fas fa-sync-alt mr-1 text-blue-500"></i>
+                        <span>Data updates: <span id="footer-updated" class="font-medium">Just now</span></span>
+                    </div>
+                    <div class="text-sm text-gray-500 flex items-center">
+                        <i class="fas fa-shield-alt mr-1 text-green-500"></i>
+                        <span>Systems: <span class="font-medium">All operational</span></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Initialize all charts and maps
+        document.addEventListener('DOMContentLoaded', function() {
+            // System status indicators
+            const updateSystemStatus = () => {
+                const now = new Date();
+                const timeString = now.toLocaleTimeString();
+                document.getElementById('last-updated').textContent = timeString;
+                document.getElementById('footer-updated').textContent = timeString;
+            };
+
+            // Refresh button functionality
+            document.getElementById('refresh-btn').addEventListener('click', function() {
+                this.classList.add('animate-spin');
+                setTimeout(() => {
+                    this.classList.remove('animate-spin');
+                    updateSystemStatus();
+                    // In a real app, this would trigger API calls to refresh data
+                    showNotification('Data refreshed successfully');
+                }, 1000);
+            });
+
+            // Show notification function
+            function showNotification(message) {
+                const notification = document.createElement('div');
+                notification.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg flex items-center';
+                notification.innerHTML = `
+                    <i class="fas fa-check-circle mr-2"></i>
+                    <span>${message}</span>
+                `;
+                document.body.appendChild(notification);
+                setTimeout(() => {
+                    notification.remove();
+                }, 3000);
+            }
+
+            // Demand Forecast Chart
+            const forecastData = [
+                { 
+                    x: ["2025-07-01", "2025-07-02", "2025-07-03", "2025-07-04", "2025-07-05", 
+                        "2025-07-06", "2025-07-07", "2025-07-08", "2025-07-09", "2025-07-10",
+                        "2025-07-11", "2025-07-12", "2025-07-13", "2025-07-14", "2025-07-15",
+                        "2025-07-16", "2025-07-17", "2025-07-18", "2025-07-19", "2025-07-20",
+                        "2025-07-21", "2025-07-22", "2025-07-23", "2025-07-24", "2025-07-25",
+                        "2025-07-26", "2025-07-27", "2025-07-28", "2025-07-29", "2025-07-30"], 
+                    y: [120, 135, 140, 125, 130, 110, 115, 125, 135, 145, 
+                        150, 140, 130, 125, 135, 145, 155, 150, 145, 140, 
+                        135, 140, 145, 150, 155, 150, 145, 140, 135, 130],
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    name: 'Actual Sales',
+                    line: { color: '#3B82F6', width: 2 }
+                },
+                { 
+                    x: ["2025-07-31", "2025-08-01", "2025-08-02", "2025-08-03", "2025-08-04", 
+                        "2025-08-05", "2025-08-06", "2025-08-07", "2025-08-08", "2025-08-09",
+                        "2025-08-10", "2025-08-11", "2025-08-12", "2025-08-13", "2025-08-14",
+                        "2025-08-15", "2025-08-16", "2025-08-17", "2025-08-18", "2025-08-19",
+                        "2025-08-20", "2025-08-21", "2025-08-22", "2025-08-23", "2025-08-24",
+                        "2025-08-25", "2025-08-26", "2025-08-27", "2025-08-28", "2025-08-29"], 
+                    y: [125, 130, 135, 140, 145, 150, 155, 160, 165, 170, 
+                        175, 170, 165, 160, 155, 150, 145, 140, 135, 130, 
+                        125, 120, 115, 110, 105, 100, 95, 90, 85, 80],
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    name: 'AI Predicted Sales',
+                    line: { color: '#8B5CF6', width: 2, dash: 'dot' }
+                }
+            ];
+            
+            Plotly.newPlot('forecastChart', forecastData, {
+                title: '',
+                xaxis: { 
+                    title: 'Date',
+                    gridcolor: '#f3f4f6',
+                    zerolinecolor: '#f3f4f6'
+                },
+                yaxis: { 
+                    title: 'Units Sold', 
+                    gridcolor: '#f3f4f6',
+                    zerolinecolor: '#f3f4f6'
+                },
+                margin: { t: 30, l: 50, r: 30, b: 50 },
+                legend: { 
+                    orientation: 'h', 
+                    y: 1.1,
+                    bgcolor: 'rgba(255,255,255,0.5)'
+                },
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                hovermode: 'x unified'
+            });
+
+            // Production Chart
+            const productionData = [
+                {
+                    x: ['Fan Assembler #1', 'Fan Assembler #2', 'Packaging Line', 'Quality Control'],
+                    y: [320, 280, 190, 120],
+                    type: 'bar',
+                    marker: {
+                        color: ['#10B981', '#10B981', '#F59E0B', '#EF4444']
+                    }
+                }
+            ];
+            
+            Plotly.newPlot('productionChart', productionData, {
+                title: '',
+                xaxis: { 
+                    title: 'Production Line',
+                    gridcolor: '#f3f4f6',
+                    zerolinecolor: '#f3f4f6'
+                },
+                yaxis: { 
+                    title: 'Units Produced Today',
+                    gridcolor: '#f3f4f6',
+                    zerolinecolor: '#f3f4f6'
+                },
+                margin: { t: 30, l: 50, r: 30, b: 50 },
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                paper_bgcolor: 'rgba(0,0,0,0)'
+            });
+
+            // Inventory Chart
+            const inventoryData = [
+                {
+                    labels: ['Motors', 'Blades', 'Electronics', 'Packaging', 'Bases'],
+                    values: [120, 450, 780, 920, 650],
+                    type: 'pie',
+                    marker: {
+                        colors: ['#EF4444', '#F59E0B', '#3B82F6', '#10B981', '#8B5CF6']
+                    },
+                    textinfo: 'label+percent',
+                    insidetextorientation: 'radial',
+                    hoverinfo: 'label+value',
+                    textposition: 'inside',
+                    hole: 0.4
+                }
+            ];
+            
+            Plotly.newPlot('inventoryChart', inventoryData, {
+                title: '',
+                margin: { t: 30, l: 30, r: 30, b: 30 },
+                showlegend: false,
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                paper_bgcolor: 'rgba(0,0,0,0)'
+            });
+
+            // Delivery Map
+            const map = L.map('map').setView([23.8103, 90.4125], 12);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+            
+            // Custom delivery icons
+            const deliveryIcon = L.icon({
+                iconUrl: 'https://cdn0.iconfinder.com/data/icons/small-n-flat/24/678111-map-marker-512.png',
+                iconSize: [32, 32],
+                iconAnchor: [16, 32]
+            });
+            
+            const delayedIcon = L.icon({
+                iconUrl: 'https://cdn0.iconfinder.com/data/icons/small-n-flat/24/678111-map-marker-512.png',
+                iconSize: [32, 32],
+                iconAnchor: [16, 32],
+                className: 'delayed-marker'
+            });
+            
+            // Add delivery markers
+            L.marker([23.8103, 90.4125], {icon: deliveryIcon}).addTo(map)
+                .bindPopup('<b>Truck #DL-3421</b><br>Status: On Time<br>ETA: Today, 14:00<br>Load: 500 Smart Fans');
+                
+            L.marker([23.8200, 90.4000], {icon: delayedIcon}).addTo(map)
+                .bindPopup('<b>Truck #DL-5678</b><br>Status: Delayed<br>ETA: Tomorrow, 09:00<br>Reason: Traffic congestion');
+            
+            // Add a route line (simulated)
+            const route = L.polyline(
+                [
+                    [23.8200, 90.4000],
+                    [23.8150, 90.4050],
+                    [23.8120, 90.4080],
+                    [23.8103, 90.4125]
+                ],
+                {
+                    color: '#3B82F6',
+                    weight: 3,
+                    dashArray: '5, 5'
+                }
+            ).addTo(map);
+
+            // Simulate real-time updates
+            setInterval(() => {
+                updateSystemStatus();
+                
+                // Simulate production updates
+                const newProductionData = JSON.parse(JSON.stringify(productionData));
+                newProductionData[0].y = newProductionData[0].y.map(val => {
+                    const change = Math.floor(Math.random() * 5);
+                    return val + change;
+                });
+                Plotly.react('productionChart', newProductionData, productionData.layout);
+                
+                // Simulate moving delivery truck
+                const markers = document.querySelectorAll('.delayed-marker');
+                if (markers.length > 0) {
+                    const marker = markers[0];
+                    const parent = marker.parentElement;
+                    const lat = parseFloat(parent.getAttribute('data-lat')) + 0.0005;
+                    const lng = parseFloat(parent.getAttribute('data-lng')) + 0.0005;
+                    parent.setAttribute('data-lat', lat);
+                    parent.setAttribute('data-lng', lng);
+                    map.setView([lat, lng], 12);
+                }
+                
+            }, 5000);
+
+            // Run Forecast button
+            document.getElementById('run-forecast').addEventListener('click', function() {
+                this.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Running...';
+                setTimeout(() => {
+                    this.innerHTML = '<i class="fas fa-bolt mr-1"></i> Run Forecast';
+                    showNotification('AI forecast completed successfully');
+                }, 2000);
+            });
+
+            // View Details buttons
+            document.getElementById('production-details').addEventListener('click', function() {
+                showNotification('Opening production details view');
+            });
+
+            document.getElementById('inventory-actions').addEventListener('click', function() {
+                showNotification('Showing AI inventory recommendations');
+            });
+
+            document.getElementById('delivery-actions').classList.add('cursor-not-allowed', 'opacity-75');
+        });
+    </script>
+</body>
+</html>
